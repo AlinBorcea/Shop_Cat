@@ -11,7 +11,7 @@ use tui::{
     layout::{Layout, Constraint, Direction, Alignment},
     style::{Color, Style, Modifier},
     text::{Span, Spans},
-    widgets::{Widget, Paragraph, Block, BorderType, Borders, Tabs},
+    widgets::{Paragraph, Block, BorderType, Borders, Tabs},
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -32,38 +32,50 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
+    terminal.hide_cursor()?;
 
     //App data
-    let header_titles = vec!["Home".to_owned(), "Table Editor".to_owned()];
+    let header_titles = vec!["Home".to_owned(), "Table List".to_owned(), "Table Editor".to_owned()];
     let mut header_index = 0;
 
+    let home_content = "\n\nPress keys F1 - F3 to select the desired page.\nFor each page follow the instructions!";
+
     loop {
+        //Tui drawing
         terminal.draw(|rect| {
             let size = rect.size();
             let main_chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(2)
                 .constraints([
-                      Constraint::Min(3),
-                      Constraint::Min(10),  
+                      Constraint::Length(3),
+                      Constraint::Min(10),
                     ]
                 ).split(size);
 
-            let main_tab = tabs(&header_titles, header_index);
+            let main_tab = draw_tabs(&header_titles, header_index);
             rect.render_widget(main_tab, main_chunks[0]);
+
             match header_index {
-                0 => {rect.render_widget(home("Home", "Welcome"), main_chunks[1])}
-                _ => {rect.render_widget(home("Home", "Welcome"), main_chunks[1])}
+                0 => {rect.render_widget(draw_home(home_content), main_chunks[1]);}
+                _ => {rect.render_widget(draw_home(home_content), main_chunks[1]);}
             }
 
         })?;
 
+        //Input handler
         match rx.recv()? {
             event => match event.code {
                 KeyCode::Esc => {
                     disable_raw_mode()?;
+                    terminal.show_cursor()?;
                     terminal.clear()?;
                     break;
+                }
+                KeyCode::F(u) => {
+                    if u >= 1u8 && u <= header_titles.len() as u8 {
+                        header_index = (u - 1) as usize;
+                    }
                 }
                 _ => {}
             }
@@ -74,30 +86,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-
-fn tabs(menu_titles: &Vec<String>, page_index: usize) -> Tabs {
+fn draw_tabs(menu_titles: &Vec<String>, page_index: usize) -> Tabs {
     let menu = menu_titles
         .iter()
         .map(|t| {
             Spans::from(vec![
-                Span::styled(t, Style::default().bg(Color::DarkGray).fg(Color::White))
+                Span::styled(t, Style::default())
             ])
-
         }).collect();
 
     Tabs::new(menu)
         .select(page_index)
-        .block(Block::default().title("Shop Cat").borders(Borders::ALL))
+        .highlight_style(Style::default().add_modifier(Modifier::UNDERLINED).fg(Color::Red))
         .divider(Span::raw("|"))
+        .block(Block::default()
+            .title("Shop Cat")
+            .borders(Borders::ALL)
+            .border_type(BorderType::Rounded))
 }
 
-fn home<'a>(title: &'a str, content: &'a str) -> Paragraph<'a> {
+fn draw_home<'a>(content: &'a str) -> Paragraph<'a> {
     Paragraph::new(content)
-        .style(Style::default().bg(Color::DarkGray).fg(Color::White))
+        .style(Style::default().fg(Color::White))
         .alignment(Alignment::Center)
         .block(Block::default()
             .borders(Borders::ALL)
-            .title(title)
             .border_type(BorderType::Rounded)
         )
 }
