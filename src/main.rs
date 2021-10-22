@@ -5,13 +5,15 @@ use std::sync::mpsc;
 use std::thread;
 use std::io;
 
+use rusqlite::{Connection, Result};
+
 use tui::{
-    backend::CrosstermBackend,
-    Terminal,
+    widgets::{Paragraph, Block, BorderType, Borders, Tabs, List, ListItem, ListState},
     layout::{Layout, Constraint, Direction, Alignment},
     style::{Color, Style, Modifier},
+    backend::CrosstermBackend,
     text::{Span, Spans},
-    widgets::{Paragraph, Block, BorderType, Borders, Tabs, List, ListItem, ListState},
+    Terminal,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -35,13 +37,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     terminal.hide_cursor()?;
 
     //App data
-    let header_titles = vec!["Home".to_owned(), "Table List".to_owned(), "Table Editor".to_owned()];
-    let mut header_index = 0;
 
-    let home_content = "\n\nPress keys F1 - F3 to select the desired page.\nFor each page follow the instructions!";
-    let table_names = vec!["dogs", "cats", "owners", "drugs"];
+    //header
+    let menu_titles = vec!["Home".to_owned(), "Table List".to_owned(), "Table Editor".to_owned()];
+    let mut menu_index = 0;
+
+    //home
+    let home_content = "\n\nPress keys F1 - F3 to select the desired page.\nPress arrow keys to go down and up.\nFor each page follow the instructions!";
+    
+    //table view
+    let mut table_names: Vec<String> = Vec::with_capacity(10);
     let mut table_state = ListState::default();
     table_state.select(Some(0));
+
+    init_table_names(&mut table_names)?;
 
     loop {
         //Tui drawing
@@ -56,20 +65,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     ]
                 ).split(size);
 
-            let main_tab = draw_tabs(&header_titles, header_index);
-            rect.render_widget(main_tab, main_chunks[0]);
+            rect.render_widget(draw_tabs(&menu_titles, menu_index), main_chunks[0]);
 
-            match header_index {
+            match menu_index {
                 0 => {rect.render_widget(draw_home(home_content), main_chunks[1]);}
-                1 => {rect.render_stateful_widget(draw_list(&table_names), main_chunks[1], &mut table_state);}
+                1 => {
+                    if table_names.len() > 0 {
+                        rect.render_stateful_widget(draw_list(&table_names), main_chunks[1], &mut table_state);
+                    }
+                }
                 _ => {rect.render_widget(draw_home(home_content), main_chunks[1]);}
             }
 
         })?;
 
         //Input handler
-        match rx.recv()? {
-            event => match event.code {
+        let event = rx.recv()?;
+        match event.code {
                 KeyCode::Esc => {
                     disable_raw_mode()?;
                     terminal.show_cursor()?;
@@ -77,43 +89,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     break;
                 }
                 KeyCode::F(u) => {
-                    if u >= 1u8 && u <= header_titles.len() as u8 {
-                        header_index = (u - 1) as usize;
+                    if u >= 1u8 && u <= menu_titles.len() as u8 {
+                        menu_index = (u - 1) as usize;
                     }
                 }
-                KeyCode::Up => {
-                    match header_index {
-                        1 => {
-                            let mut index = table_state.selected().unwrap();
-                            if index == 0 {
-                                index = table_names.len() - 1;
-                            } else {
-                                index -= 1;
-                            }
-                    
-                            table_state.select(Some(index));
-                        }
+                _ => match menu_index {
+                        1 => handle_table_list_input(&event.code, &mut table_state, table_names.len()),
                         _ => {}
-                    }                    
                 }
-
-                KeyCode::Down => {
-                    match header_index {
-                        1 => {
-                            let mut index = table_state.selected().unwrap();
-                            if index + 1 >= table_names.len() {
-                                index = 0;
-                            } else {
-                                index += 1;
-                            }
-                    
-                            table_state.select(Some(index));
-                        }
-                        _ => {}
-                    }                    
-                }
-                _ => {}
-            }
         }
     }
 
@@ -122,13 +105,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 //Functions to draw the pages
 fn draw_tabs(menu_titles: &Vec<String>, page_index: usize) -> Tabs {
-    let menu = menu_titles
-        .iter()
-        .map(|t| {
-            Spans::from(vec![
-                Span::styled(t, Style::default())
-            ])
-        }).collect();
+    let menu = menu_titles.iter().map(|t| {
+            Spans::from(vec![Span::styled(t, Style::default())])
+    }).collect();
 
     Tabs::new(menu)
         .select(page_index)
@@ -150,7 +129,7 @@ fn draw_home<'a>(content: &'a str) -> Paragraph<'a> {
         )
 }
 
-fn draw_list<'a>(item_names: &'a Vec<&str>) -> List<'a> {
+fn draw_list<'a>(item_names: &'a Vec<String>) -> List<'a> {
     let items: Vec<ListItem> = item_names.iter().map(|el| {
         ListItem::new(el.as_ref())
     }).collect();
@@ -159,4 +138,43 @@ fn draw_list<'a>(item_names: &'a Vec<&str>) -> List<'a> {
     .block(Block::default().title("List").borders(Borders::ALL))
     .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
     .highlight_symbol(">")
+}
+
+//Input handlers
+fn handle_table_list_input(code: &KeyCode, state: &mut ListState, length: usize) {
+    match code {
+        KeyCode::Up => {
+            let mut index = state.selected().unwrap();
+            if index == 0 {
+                index = length - 1;
+            } else {
+                index -= 1;
+            }
+                    
+            state.select(Some(index));
+        }
+        KeyCode::Down => {
+            let mut index = state.selected().unwrap();
+            if index + 1 >= length {
+                index = 0;
+            } else {
+                index += 1;
+            }
+            
+            state.select(Some(index));
+        }
+        _ => {}
+    };
+}
+
+fn init_table_names(table_names: &mut Vec<String>) -> Result<()> {
+    let conn = Connection::open("_tables")?;
+    let mut stmt = conn.prepare("SELECT * FROM _tables")?;
+    let mut rows = stmt.query([])?;
+    
+    while let Some(row) = rows.next()? {
+        table_names.push(row.get::<usize, String>(0).unwrap());
+    }
+
+    Ok(())
 }
