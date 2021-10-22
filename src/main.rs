@@ -11,7 +11,7 @@ use tui::{
     layout::{Layout, Constraint, Direction, Alignment},
     style::{Color, Style, Modifier},
     text::{Span, Spans},
-    widgets::{Paragraph, Block, BorderType, Borders, Tabs},
+    widgets::{Paragraph, Block, BorderType, Borders, Tabs, List, ListItem, ListState},
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -39,6 +39,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut header_index = 0;
 
     let home_content = "\n\nPress keys F1 - F3 to select the desired page.\nFor each page follow the instructions!";
+    let table_names = vec!["dogs", "cats", "owners", "drugs"];
+    let mut table_state = ListState::default();
+    table_state.select(Some(0));
 
     loop {
         //Tui drawing
@@ -58,6 +61,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             match header_index {
                 0 => {rect.render_widget(draw_home(home_content), main_chunks[1]);}
+                1 => {rect.render_stateful_widget(draw_list(&table_names), main_chunks[1], &mut table_state);}
                 _ => {rect.render_widget(draw_home(home_content), main_chunks[1]);}
             }
 
@@ -77,15 +81,46 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         header_index = (u - 1) as usize;
                     }
                 }
+                KeyCode::Up => {
+                    match header_index {
+                        1 => {
+                            let mut index = table_state.selected().unwrap();
+                            if index == 0 {
+                                index = table_names.len() - 1;
+                            } else {
+                                index -= 1;
+                            }
+                    
+                            table_state.select(Some(index));
+                        }
+                        _ => {}
+                    }                    
+                }
+
+                KeyCode::Down => {
+                    match header_index {
+                        1 => {
+                            let mut index = table_state.selected().unwrap();
+                            if index + 1 >= table_names.len() {
+                                index = 0;
+                            } else {
+                                index += 1;
+                            }
+                    
+                            table_state.select(Some(index));
+                        }
+                        _ => {}
+                    }                    
+                }
                 _ => {}
             }
         }
-
     }
 
     Ok(())
 }
 
+//Functions to draw the pages
 fn draw_tabs(menu_titles: &Vec<String>, page_index: usize) -> Tabs {
     let menu = menu_titles
         .iter()
@@ -113,4 +148,15 @@ fn draw_home<'a>(content: &'a str) -> Paragraph<'a> {
             .borders(Borders::ALL)
             .border_type(BorderType::Rounded)
         )
+}
+
+fn draw_list<'a>(item_names: &'a Vec<&str>) -> List<'a> {
+    let items: Vec<ListItem> = item_names.iter().map(|el| {
+        ListItem::new(el.as_ref())
+    }).collect();
+
+    List::new(items)
+    .block(Block::default().title("List").borders(Borders::ALL))
+    .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
+    .highlight_symbol(">")
 }
