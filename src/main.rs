@@ -14,7 +14,6 @@ use tui::{
     Terminal,
 };
 
-mod table_data;
 mod front_end;
 
 use front_end::*;
@@ -65,7 +64,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         //Tui drawing
         terminal.draw(|rect| {
-            let size = rect.size();
             let main_chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(2)
@@ -73,12 +71,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                       Constraint::Length(3),
                       Constraint::Min(10),
                     ]
-                ).split(size);
+                ).split(rect.size());
 
             rect.render_widget(draw_tabs(&menu_titles, menu_index), main_chunks[0]);
 
             match menu_index {
-                0 => {rect.render_widget(draw_home(home_content), main_chunks[1]);}
+                0 => { rect.render_widget(draw_home(home_content), main_chunks[1]); }
                 1 => {
                     if table_names.len() > 0 {
                         rect.render_stateful_widget(draw_list(&table_names), main_chunks[1], &mut table_list_state);
@@ -158,10 +156,10 @@ fn handle_table_list_input(code: &KeyCode, state: &mut ListState, length: usize,
 fn init_table_names(table_names: &mut Vec<String>) -> Result<()> {
     let conn = Connection::open("_tables")?;
 
-    conn.execute("CREATE TABLE IF NOT EXISTS _tables
-    (
-        name TEXT UNIQUE
-    )", [])?;
+    //conn.execute("CREATE TABLE IF NOT EXISTS _tables
+    //(
+    //    name TEXT UNIQUE
+    //)", [])?;
 
     //conn.execute("INSERT INTO _tables (name) VALUES (?1)", params!["caine"])?;
     //conn.execute("INSERT INTO _tables (name) VALUES (?1)", params!["tigru"])?;

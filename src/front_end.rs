@@ -60,12 +60,11 @@ pub fn draw_table<'a>(name: &'a str, header: &'a Vec<String>, rows: &'a Vec<Vec<
         this_rows.push(Row::new(c));
     }
     
-    Table::new(
-        this_rows
-    )
+    Table::new(this_rows)
     .block(Block::default().title(name).borders(Borders::ALL))
     .header(header_data)
     .widths(&[Constraint::Length(20), Constraint::Length(20), Constraint::Length(20), Constraint::Length(20), Constraint::Length(20), Constraint::Length(20)])
     .column_spacing(4)
     .style(Style::default().fg(Color::White))
+    .highlight_style(Style::default().fg(Color::Red))
 }
