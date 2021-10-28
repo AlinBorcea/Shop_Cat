@@ -1,6 +1,6 @@
 use tui::{
-    widgets::{Paragraph, Block, BorderType, Borders, Tabs, List, ListItem},
-    layout::{Alignment},
+    widgets::{Paragraph, Block, BorderType, Borders, Tabs, List, ListItem, Table, Cell, Row},
+    layout::{Alignment, Constraint},
     style::{Color, Style, Modifier},
     text::{Span, Spans},
 };
@@ -40,4 +40,27 @@ pub fn draw_list<'a>(item_names: &'a Vec<String>) -> List<'a> {
     .block(Block::default().title("List").borders(Borders::ALL))
     .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
     .highlight_symbol(">")
+}
+
+pub fn draw_table<'a>(name: &'a str, header: &'a Vec<String>, rows: &'a Vec<String>) -> Table<'a> {
+    let header_cells: Vec<Cell> = header.iter().map(|t| {
+        Cell::from(t.as_ref())
+    }).collect();
+    
+    let header_data = Row::new(
+        header_cells
+    );
+
+    let row_data: Vec<Row> = rows.iter().map(|t| {
+        Row::new(vec![Cell::from(t.as_ref())])
+    }).collect();
+    
+    Table::new(
+        row_data
+    )
+    .block(Block::default().title(name).borders(Borders::ALL))
+    .header(header_data)
+    .widths(&[Constraint::Length(20), Constraint::Length(20), Constraint::Length(20)])
+    .column_spacing(4)
+    .style(Style::default().fg(Color::White))
 }

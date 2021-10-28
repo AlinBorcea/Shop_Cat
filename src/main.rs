@@ -1,6 +1,3 @@
-mod table;
-mod front_end;
-
 use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 use crossterm::event::{self, Event, KeyCode};
 
@@ -16,6 +13,9 @@ use tui::{
     backend::CrosstermBackend,
     Terminal,
 };
+
+mod table_data;
+mod front_end;
 
 use front_end::*;
 
@@ -42,18 +42,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     //App data
 
     //header
-    let menu_titles = vec!["Home".to_owned(), "Table List".to_owned(), "Table Editor".to_owned()];
+    let menu_titles = vec!["Home".to_owned(), "Table List".to_owned(), "Add table".to_owned(), "Table View".to_owned()];
     let mut menu_index = 0;
 
     //home
     let home_content = "\n\nPress keys F1 - F3 to select the desired page.\nPress arrow keys to go down and up.\nFor each page follow the instructions!";
     
-    //table view
+    //table list
     let mut table_names: Vec<String> = Vec::with_capacity(10);
     let mut table_state = ListState::default();
     table_state.select(Some(0));
-
     init_table_names(&mut table_names)?;
+
+
 
     loop {
         //Tui drawing
@@ -77,7 +78,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         rect.render_stateful_widget(draw_list(&table_names), main_chunks[1], &mut table_state);
                     }
                 }
-                _ => {rect.render_widget(draw_home(home_content), main_chunks[1]);}
+                _ => {}
             }
 
         })?;
@@ -135,6 +136,16 @@ fn handle_table_list_input(code: &KeyCode, state: &mut ListState, length: usize)
 
 fn init_table_names(table_names: &mut Vec<String>) -> Result<()> {
     let conn = Connection::open("_tables")?;
+
+    conn.execute("CREATE TABLE IF NOT EXISTS _tables
+    (
+        name TEXT UNIQUE
+    )", [])?;
+
+    //conn.execute("INSERT INTO _tables (name) VALUES (?1)", params!["caine"])?;
+    //conn.execute("INSERT INTO _tables (name) VALUES (?1)", params!["tigru"])?;
+    //conn.execute("INSERT INTO _tables (name) VALUES (?1)", params!["leu"])?;
+
     let mut stmt = conn.prepare("SELECT * FROM _tables")?;
     let mut rows = stmt.query([])?;
     
