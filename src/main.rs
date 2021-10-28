@@ -18,6 +18,11 @@ mod front_end;
 
 use front_end::*;
 
+const HOME_INDEX: usize = 0;
+const TABLE_LIST_INDEX: usize = 1;
+const ADD_TABLE_INDEX: usize = 2;
+//const TABLE_VIEW_INDEX: usize = 3;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode()?;
     
@@ -61,35 +66,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         vec![String::from("name"), String::from("age"), String::from("age"), String::from("age"), String::from("age"), String::from("age")],
     ];
 
+    //Layouts
+    let main_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .margin(2)
+        .constraints([Constraint::Length(3), Constraint::Min(10)]);
+
+    let add_table_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .margin(0)
+        .constraints([Constraint::Min(3), Constraint::Length(3)]);
+
     loop {
         //Tui drawing
         terminal.draw(|rect| {
-            let main_chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .margin(2)
-                .constraints([
-                      Constraint::Length(3),
-                      Constraint::Min(10),
-                    ]
-                ).split(rect.size());
+            let main_chunks = main_layout.split(rect.size());
 
             rect.render_widget(draw_tabs(&menu_titles, menu_index), main_chunks[0]);
 
             match menu_index {
-                0 => { rect.render_widget(draw_home(home_content), main_chunks[1]); }
-                1 => {
+                HOME_INDEX => {
+                    rect.render_widget(draw_home(home_content), main_chunks[1]); 
+                }
+                TABLE_LIST_INDEX => {
                     if table_names.len() > 0 {
                         rect.render_stateful_widget(draw_list(&table_names), main_chunks[1], &mut table_list_state);
                     }
                 }
-                2 => {
-                    let add_table_chunks = Layout::default()
-                        .direction(Direction::Vertical)
-                        .margin(0)
-                        .constraints([
-                            Constraint::Min(3),
-                            Constraint::Length(3),
-                    ]).split(main_chunks[1]);
+                ADD_TABLE_INDEX => {
+                    let add_table_chunks = add_table_layout.split(main_chunks[1]);
 
                     rect.render_widget(draw_table("Define Table", &def_table_header, &def_table_rows), add_table_chunks[0]);
                     rect.render_widget(Paragraph::new("Goes here"), add_table_chunks[1]);
