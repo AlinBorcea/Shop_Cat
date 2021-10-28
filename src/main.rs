@@ -1,3 +1,6 @@
+mod table;
+mod front_end;
+
 use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 use crossterm::event::{self, Event, KeyCode};
 
@@ -8,17 +11,17 @@ use std::io;
 use rusqlite::{Connection, Result};
 
 use tui::{
-    widgets::{Paragraph, Block, BorderType, Borders, Tabs, List, ListItem, ListState},
-    layout::{Layout, Constraint, Direction, Alignment},
-    style::{Color, Style, Modifier},
+    widgets::ListState,
+    layout::{Layout, Constraint, Direction},
     backend::CrosstermBackend,
-    text::{Span, Spans},
     Terminal,
 };
 
+use front_end::*;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode()?;
-
+    
     //Sender Receiver channel
     let (tx, rx) = mpsc::channel();
     thread::spawn(move || {
@@ -103,43 +106,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-//Functions to draw the pages
-fn draw_tabs(menu_titles: &Vec<String>, page_index: usize) -> Tabs {
-    let menu = menu_titles.iter().map(|t| {
-            Spans::from(vec![Span::styled(t, Style::default())])
-    }).collect();
-
-    Tabs::new(menu)
-        .select(page_index)
-        .highlight_style(Style::default().add_modifier(Modifier::UNDERLINED).fg(Color::Red))
-        .divider(Span::raw("|"))
-        .block(Block::default()
-            .title("Shop Cat")
-            .borders(Borders::ALL)
-            .border_type(BorderType::Rounded))
-}
-
-fn draw_home<'a>(content: &'a str) -> Paragraph<'a> {
-    Paragraph::new(content)
-        .style(Style::default().fg(Color::White))
-        .alignment(Alignment::Center)
-        .block(Block::default()
-            .borders(Borders::ALL)
-            .border_type(BorderType::Rounded)
-        )
-}
-
-fn draw_list<'a>(item_names: &'a Vec<String>) -> List<'a> {
-    let items: Vec<ListItem> = item_names.iter().map(|el| {
-        ListItem::new(el.as_ref())
-    }).collect();
-
-    List::new(items)
-    .block(Block::default().title("List").borders(Borders::ALL))
-    .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
-    .highlight_symbol(">")
-}
-
 //Input handlers
 fn handle_table_list_input(code: &KeyCode, state: &mut ListState, length: usize) {
     match code {
@@ -150,7 +116,7 @@ fn handle_table_list_input(code: &KeyCode, state: &mut ListState, length: usize)
             } else {
                 index -= 1;
             }
-                    
+
             state.select(Some(index));
         }
         KeyCode::Down => {
