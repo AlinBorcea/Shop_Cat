@@ -8,7 +8,7 @@ use std::io;
 use rusqlite::{Connection, Result};
 
 use tui::{
-    widgets::ListState,
+    widgets::{ListState, Paragraph},
     layout::{Layout, Constraint, Direction},
     backend::CrosstermBackend,
     Terminal,
@@ -50,11 +50,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     //table list
     let mut table_names: Vec<String> = Vec::with_capacity(10);
-    let mut table_state = ListState::default();
-    table_state.select(Some(0));
+    let mut table_list_state = ListState::default();
+    let mut selected_table_name_index: isize = if table_names.len() > 0 {0} else {-1};
+    table_list_state.select(Some(0));
     init_table_names(&mut table_names)?;
 
-
+    //Add Table
+    let def_table_header = vec![String::from("Name"), String::from("Data Type"), String::from("Default Value"), String::from("Minimum Length"), String::from("Maximum Length"), String::from("Precission")];
+    let def_table_rows: Vec<Vec<String>> = vec![
+        vec![String::from("name"), String::from("age"), String::from("age"), String::from("age"), String::from("age"), String::from("age")],
+        vec![String::from("name"), String::from("age"), String::from("age"), String::from("age"), String::from("age"), String::from("age")],
+    ];
 
     loop {
         //Tui drawing
@@ -75,8 +81,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 0 => {rect.render_widget(draw_home(home_content), main_chunks[1]);}
                 1 => {
                     if table_names.len() > 0 {
-                        rect.render_stateful_widget(draw_list(&table_names), main_chunks[1], &mut table_state);
+                        rect.render_stateful_widget(draw_list(&table_names), main_chunks[1], &mut table_list_state);
                     }
+                }
+                2 => {
+                    let add_table_chunks = Layout::default()
+                        .direction(Direction::Vertical)
+                        .margin(0)
+                        .constraints([
+                            Constraint::Min(3),
+                            Constraint::Length(3),
+                    ]).split(main_chunks[1]);
+
+                    rect.render_widget(draw_table("Define Table", &def_table_header, &def_table_rows), add_table_chunks[0]);
+                    rect.render_widget(Paragraph::new("Goes here"), add_table_chunks[1]);
                 }
                 _ => {}
             }
@@ -98,7 +116,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
                 _ => match menu_index {
-                        1 => handle_table_list_input(&event.code, &mut table_state, table_names.len()),
+                        1 => handle_table_list_input(&event.code, &mut table_list_state, table_names.len(), &mut selected_table_name_index),
                         _ => {}
                 }
         }
@@ -108,8 +126,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 //Input handlers
-fn handle_table_list_input(code: &KeyCode, state: &mut ListState, length: usize) {
+fn handle_table_list_input(code: &KeyCode, state: &mut ListState, length: usize, selected: &mut isize) {
     match code {
+        KeyCode::Enter => {
+            *selected = state.selected().unwrap() as isize;
+        },
         KeyCode::Up => {
             let mut index = state.selected().unwrap();
             if index == 0 {
@@ -119,7 +140,7 @@ fn handle_table_list_input(code: &KeyCode, state: &mut ListState, length: usize)
             }
 
             state.select(Some(index));
-        }
+        },
         KeyCode::Down => {
             let mut index = state.selected().unwrap();
             if index + 1 >= length {
@@ -129,7 +150,7 @@ fn handle_table_list_input(code: &KeyCode, state: &mut ListState, length: usize)
             }
             
             state.select(Some(index));
-        }
+        },
         _ => {}
     };
 }

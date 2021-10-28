@@ -42,7 +42,7 @@ pub fn draw_list<'a>(item_names: &'a Vec<String>) -> List<'a> {
     .highlight_symbol(">")
 }
 
-pub fn draw_table<'a>(name: &'a str, header: &'a Vec<String>, rows: &'a Vec<String>) -> Table<'a> {
+pub fn draw_table<'a>(name: &'a str, header: &'a Vec<String>, rows: &'a Vec<Vec<String>>) -> Table<'a> {
     let header_cells: Vec<Cell> = header.iter().map(|t| {
         Cell::from(t.as_ref())
     }).collect();
@@ -51,16 +51,21 @@ pub fn draw_table<'a>(name: &'a str, header: &'a Vec<String>, rows: &'a Vec<Stri
         header_cells
     );
 
-    let row_data: Vec<Row> = rows.iter().map(|t| {
-        Row::new(vec![Cell::from(t.as_ref())])
-    }).collect();
+    let mut this_rows: Vec<Row> = Vec::with_capacity(rows.len());
+    for row in rows {
+        let c: Vec<Cell> = row.iter().map(|t| {
+            Cell::from(t.as_ref())
+        }).collect();
+
+        this_rows.push(Row::new(c));
+    }
     
     Table::new(
-        row_data
+        this_rows
     )
     .block(Block::default().title(name).borders(Borders::ALL))
     .header(header_data)
-    .widths(&[Constraint::Length(20), Constraint::Length(20), Constraint::Length(20)])
+    .widths(&[Constraint::Length(20), Constraint::Length(20), Constraint::Length(20), Constraint::Length(20), Constraint::Length(20), Constraint::Length(20)])
     .column_spacing(4)
     .style(Style::default().fg(Color::White))
 }
