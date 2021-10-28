@@ -14,16 +14,18 @@ use tui::{
     Terminal,
 };
 
+mod input_handler;
 mod front_end;
 
+use input_handler::*;
 use front_end::*;
 
-const HOME_INDEX: usize = 0;
-const TABLE_LIST_INDEX: usize = 1;
-const ADD_TABLE_INDEX: usize = 2;
-//const TABLE_VIEW_INDEX: usize = 3;
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    const HOME_INDEX: usize = 0;
+    const TABLE_LIST_INDEX: usize = 1;
+    const ADD_TABLE_INDEX: usize = 2;
+    //const TABLE_VIEW_INDEX: usize = 3;
+
     enable_raw_mode()?;
     
     //Sender Receiver channel
@@ -104,7 +106,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         })?;
 
-        //Input handler
+        //Main input handler
         let event = rx.recv()?;
         match event.code {
                 KeyCode::Esc => {
@@ -119,43 +121,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
                 _ => match menu_index {
-                        1 => handle_table_list_input(&event.code, &mut table_list_state, table_names.len(), &mut selected_table_name_index),
+                        TABLE_LIST_INDEX => handle_table_list_input(&event.code, &mut table_list_state, table_names.len(), &mut selected_table_name_index),
                         _ => {}
                 }
         }
     }
 
     Ok(())
-}
-
-//Input handlers
-fn handle_table_list_input(code: &KeyCode, state: &mut ListState, length: usize, selected: &mut isize) {
-    match code {
-        KeyCode::Enter => {
-            *selected = state.selected().unwrap() as isize;
-        },
-        KeyCode::Up => {
-            let mut index = state.selected().unwrap();
-            if index == 0 {
-                index = length - 1;
-            } else {
-                index -= 1;
-            }
-
-            state.select(Some(index));
-        },
-        KeyCode::Down => {
-            let mut index = state.selected().unwrap();
-            if index + 1 >= length {
-                index = 0;
-            } else {
-                index += 1;
-            }
-            
-            state.select(Some(index));
-        },
-        _ => {}
-    };
 }
 
 fn init_table_names(table_names: &mut Vec<String>) -> Result<()> {
