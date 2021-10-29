@@ -8,7 +8,7 @@ use std::io;
 use rusqlite::{Connection, Result};
 
 use tui::{
-    widgets::{ListState, Paragraph},
+    widgets::{ListState},
     layout::{Layout, Constraint, Direction},
     backend::CrosstermBackend,
     Terminal,
@@ -57,13 +57,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     //table list
     let mut table_names: Vec<String> = Vec::with_capacity(10);
     let mut table_list_state = ListState::default();
-    let mut selected_table_name_index: isize = if table_names.len() > 0 {0} else {-1};
     table_list_state.select(Some(0));
     init_table_names(&mut table_names)?;
 
     //Add Table
     let default_table_header = vec![String::from("Name"), String::from("Data Type"), String::from("Default Value"), String::from("Minimum Length"), String::from("Maximum Length"), String::from("Precission")];
-    let default_table_rows: Vec<Vec<String>> = Vec::with_capacity(10);
+    let mut default_table_rows = vec![vec![String::with_capacity(32); 6]; 10];
+    let mut input_buffer = String::with_capacity(32);
     let mut current_row = 0;
     let mut current_column = 0;
 
@@ -98,7 +98,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let add_table_chunks = add_table_layout.split(main_chunks[1]);
 
                     rect.render_widget(draw_table("Define Table", &default_table_header, &default_table_rows), add_table_chunks[0]);
-                    rect.render_widget(Paragraph::new("Goes here"), add_table_chunks[1]);
+                    rect.render_widget(draw_paragraph(input_buffer.as_ref()), add_table_chunks[1]);
                 }
                 _ => {}
             }
@@ -120,7 +120,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
                 _ => match menu_index {
-                        TABLE_LIST_INDEX => handle_table_list_input(&event.code, &mut table_list_state, table_names.len(), &mut selected_table_name_index),
+                        TABLE_LIST_INDEX => handle_table_list_input(&event.code, &mut table_list_state, table_names.len()),
+                        ADD_TABLE_INDEX => handle_add_table_input(&event.code, &mut input_buffer, &mut default_table_rows, &mut current_row, &mut current_column),
                         _ => {}
                 }
         }

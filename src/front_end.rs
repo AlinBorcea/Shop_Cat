@@ -6,6 +6,17 @@ use tui::{
 };
 
 //Functions to draw the pages
+
+pub fn draw_paragraph<'a>(content: &'a str) -> Paragraph<'a> {
+    Paragraph::new(content)
+        .style(Style::default().fg(Color::White))
+        .alignment(Alignment::Center)
+        .block(Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Rounded)
+        )
+}
+
 pub fn draw_tabs(menu_titles: &Vec<String>, page_index: usize) -> Tabs {
     let menu = menu_titles.iter().map(|t| {
             Spans::from(vec![Span::styled(t, Style::default())])
@@ -22,13 +33,7 @@ pub fn draw_tabs(menu_titles: &Vec<String>, page_index: usize) -> Tabs {
 }
 
 pub fn draw_home<'a>(content: &'a str) -> Paragraph<'a> {
-    Paragraph::new(content)
-        .style(Style::default().fg(Color::White))
-        .alignment(Alignment::Center)
-        .block(Block::default()
-            .borders(Borders::ALL)
-            .border_type(BorderType::Rounded)
-        )
+    draw_paragraph(content)
 }
 
 pub fn draw_list<'a>(item_names: &'a Vec<String>) -> List<'a> {
