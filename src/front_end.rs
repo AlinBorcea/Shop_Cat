@@ -71,5 +71,5 @@ pub fn draw_table<'a>(name: &'a str, header: &'a Vec<String>, rows: &'a Vec<Vec<
     .widths(&[Constraint::Length(20), Constraint::Length(20), Constraint::Length(20), Constraint::Length(20), Constraint::Length(20), Constraint::Length(20)])
     .column_spacing(4)
     .style(Style::default().fg(Color::White))
-    .highlight_style(Style::default().fg(Color::Red))
+    .highlight_style(Style::default().fg(Color::Black).bg(Color::White))
 }
