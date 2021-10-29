@@ -62,11 +62,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_table_names(&mut table_names)?;
 
     //Add Table
-    let def_table_header = vec![String::from("Name"), String::from("Data Type"), String::from("Default Value"), String::from("Minimum Length"), String::from("Maximum Length"), String::from("Precission")];
-    let def_table_rows: Vec<Vec<String>> = vec![
-        vec![String::from("name"), String::from("age"), String::from("age"), String::from("age"), String::from("age"), String::from("age")],
-        vec![String::from("name"), String::from("age"), String::from("age"), String::from("age"), String::from("age"), String::from("age")],
-    ];
+    let default_table_header = vec![String::from("Name"), String::from("Data Type"), String::from("Default Value"), String::from("Minimum Length"), String::from("Maximum Length"), String::from("Precission")];
+    let default_table_rows: Vec<Vec<String>> = Vec::with_capacity(10);
+    let mut current_row = 0;
+    let mut current_column = 0;
 
     //Layouts
     let main_layout = Layout::default()
@@ -98,7 +97,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ADD_TABLE_INDEX => {
                     let add_table_chunks = add_table_layout.split(main_chunks[1]);
 
-                    rect.render_widget(draw_table("Define Table", &def_table_header, &def_table_rows), add_table_chunks[0]);
+                    rect.render_widget(draw_table("Define Table", &default_table_header, &default_table_rows), add_table_chunks[0]);
                     rect.render_widget(Paragraph::new("Goes here"), add_table_chunks[1]);
                 }
                 _ => {}

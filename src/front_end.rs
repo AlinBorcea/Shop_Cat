@@ -38,7 +38,7 @@ pub fn draw_list<'a>(item_names: &'a Vec<String>) -> List<'a> {
 
     List::new(items)
     .block(Block::default().title("List").borders(Borders::ALL))
-    .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
+    .highlight_style(Style::default().add_modifier(Modifier::ITALIC).bg(Color::White).fg(Color::Black))
     .highlight_symbol(">")
 }
 
