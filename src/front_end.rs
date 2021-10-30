@@ -5,6 +5,8 @@ use tui::{
     text::{Span, Spans},
 };
 
+use super::table_data::TableData;
+
 //Functions to draw the pages
 
 pub fn draw_paragraph<'a>(content: &'a str) -> Paragraph<'a> {
@@ -47,8 +49,9 @@ pub fn draw_list<'a>(item_names: &'a Vec<String>) -> List<'a> {
     .highlight_symbol(">")
 }
 
-pub fn draw_table<'a>(name: &'a str, header: &'a Vec<String>, rows: &'a Vec<Vec<String>>) -> Table<'a> {
-    let header_cells: Vec<Cell> = header.iter().map(|t| {
+//name: &'a str, header: &'a Vec<String>, rows: &'a Vec<Vec<String>>
+pub fn draw_table<'a>(table_data: &'a TableData) -> Table<'a> {
+    let header_cells: Vec<Cell> = table_data.header().iter().map(|t| {
         Cell::from(t.as_ref())
     }).collect();
     
@@ -56,8 +59,8 @@ pub fn draw_table<'a>(name: &'a str, header: &'a Vec<String>, rows: &'a Vec<Vec<
         header_cells
     );
 
-    let mut this_rows: Vec<Row> = Vec::with_capacity(rows.len());
-    for row in rows {
+    let mut this_rows: Vec<Row> = Vec::with_capacity(table_data.rows().len());
+    for row in table_data.rows().iter() {
         let c: Vec<Cell> = row.iter().map(|t| {
             Cell::from(t.as_ref())
         }).collect();
@@ -66,7 +69,7 @@ pub fn draw_table<'a>(name: &'a str, header: &'a Vec<String>, rows: &'a Vec<Vec<
     }
     
     Table::new(this_rows)
-    .block(Block::default().title(name).borders(Borders::ALL))
+    .block(Block::default().title(table_data.name_ref()).borders(Borders::ALL))
     .header(header_data)
     .widths(&[Constraint::Length(20), Constraint::Length(20), Constraint::Length(20), Constraint::Length(20), Constraint::Length(20), Constraint::Length(20)])
     .column_spacing(4)

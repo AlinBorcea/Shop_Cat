@@ -16,9 +16,12 @@ use tui::{
 
 mod input_handler;
 mod front_end;
+mod table_data;
 
 use input_handler::*;
 use front_end::*;
+use table_data::TableData;
+
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     const HOME_INDEX: usize = 0;
@@ -62,12 +65,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     //Add Table
     let default_table_header = vec![String::from("Name"), String::from("Data Type"), String::from("Default Value"), String::from("Minimum Length"), String::from("Maximum Length"), String::from("Precission")];
-    let mut default_table_rows = vec![vec![String::with_capacity(32); 6]; 1];
-    let mut input_buffer = String::with_capacity(32);
-    let mut current_row = 0;
-    let mut current_column = 0;
+    let mut table_data = TableData::from(&"Default".to_owned(), &default_table_header);
     let mut table_state = TableState::default();
-    default_table_rows.reserve(9);
 
     //Layouts
     let main_layout = Layout::default()
@@ -98,10 +97,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 ADD_TABLE_INDEX => {
                     let add_table_chunks = add_table_layout.split(main_chunks[1]);
-                    table_state.select(Some(current_row));
+                    table_state.select(Some(table_data.row()));
 
-                    rect.render_stateful_widget(draw_table("Define Table", &default_table_header, &default_table_rows), add_table_chunks[0], &mut table_state);
-                    rect.render_widget(draw_paragraph(input_buffer.as_ref()), add_table_chunks[1]);
+                    rect.render_stateful_widget(draw_table(&table_data), add_table_chunks[0], &mut table_state);
+                    rect.render_widget(draw_paragraph(table_data.buffer_ref()), add_table_chunks[1]);
                 }
                 _ => {}
             }
@@ -124,8 +123,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 _ => match menu_index {
                         TABLE_LIST_INDEX => handle_table_list_input(&event.code, &mut table_list_state, table_names.len()),
                         ADD_TABLE_INDEX => {
-                            handle_add_table_input(&event.code, &mut input_buffer, 
-                            &mut default_table_rows, &mut current_row, &mut current_column);
+                            table_data.handle_input(&event.code);
                         }
                         _ => {}
                 }
