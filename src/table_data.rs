@@ -109,15 +109,21 @@ impl TableData {
     }
     
     fn validate_rows(rows: &Vec<Vec<String>>) -> bool {
+        if rows.len() < 1 {
+            return false;
+        }
+
         for row in rows.iter() {
-            let len = row.len();
-            if len == 6 {
-                if row[0].len() == 0 { return false; }
-                if !(row[1] == "int" || row[1] == "text") {
-                    return false;
-                }
-    
-            } else {
+            if row.len() < 2 {
+                return false;
+            }
+
+            let cell_type = CellType::from(row[1].as_ref());
+            if cell_type == CellType::Empty {
+                return false;
+            }
+
+            if !cell_type.content_is_good(row[0].as_ref()) {
                 return false;
             }
         }
@@ -125,4 +131,32 @@ impl TableData {
         true
     }
 
+}
+
+#[derive(PartialEq, Eq)]
+enum CellType {
+    Empty,
+    Text,
+    Integer,
+    Real,
+}
+
+impl CellType {
+    pub fn from(cell_content: &str) -> CellType {
+        match cell_content {
+            "Text" => CellType::Text,
+            "Integer" => CellType::Integer,
+            "Real" => CellType::Real,
+            _ => CellType::Empty
+        }
+    }
+
+    pub fn content_is_good(&self, cell_content: &str) -> bool {
+        match self {
+            CellType::Text => !cell_content.is_empty(),
+            CellType::Integer => match cell_content.parse::<isize>() { Ok(_) => true, _ => false},
+            CellType::Real => match cell_content.parse::<f64>() { Ok(_) => true, _ => false },
+            _ => false
+        }
+    }
 }
