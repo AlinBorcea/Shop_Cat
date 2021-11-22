@@ -101,11 +101,34 @@ impl TableData {
                     self.buffer.push_str("No");
                 }
             },
+            KeyCode::Char('+') => {
+                self.rows.push(Self::empty_row(self.header.len())); 
+            },
+            KeyCode::Char('-') => {
+                if self.rows.len() > 1 {
+                    if self.row == self.rows.len() {
+                        self.row -= 1;
+                    }
+                    self.rows.pop();
+                }
+            },
             KeyCode::Char(ch) => {
                 self.buffer.push(*ch);
             },
             _ => {}
         }
+    }
+
+    fn empty_row(capacity: usize) -> Vec<String> {
+        let mut row: Vec<String> = Vec::with_capacity(capacity);
+        let mut i = 0;
+
+        while i < capacity {
+            row.push(String::with_capacity(32));
+            i += 1;
+        }
+
+        row
     }
     
     fn validate_rows(rows: &Vec<Vec<String>>) -> bool {
